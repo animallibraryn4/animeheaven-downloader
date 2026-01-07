@@ -7,7 +7,7 @@ load_dotenv()
 
 # Bot Configuration
 BOT_TOKEN = os.getenv('BOT_TOKEN', '')
-ADMIN_IDS = list(map(int, os.getenv('ADMIN_IDS', '').split(','))) if os.getenv('ADMIN_IDS') else []
+ADMIN_IDS = list(map(int, os.getenv('ADMIN_IDS', '5380609667').split(','))) if os.getenv('ADMIN_IDS') else []
 MAX_DOWNLOADS_PER_USER = int(os.getenv('MAX_DOWNLOADS_PER_USER', '3'))
 MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', '524288000'))  # 500MB in bytes
 
