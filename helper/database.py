@@ -1,210 +1,102 @@
-import json
-import os
-from datetime import datetime
 import sqlite3
-from typing import List, Dict, Optional
+from datetime import datetime
+from contextlib import contextmanager
+from config import DATABASE_URL
+
 
 class DatabaseManager:
-    def __init__(self, db_path='database/downloads.db'):
-        self.db_path = db_path
-        self.init_database()
+    def __init__(self):
+        self.conn = None
+        self.init_db()
     
-    def init_database(self):
-        """Initialize the database with required tables."""
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        
-        conn = sqlite3.connect(self.db_path)
+    @contextmanager
+    def get_cursor(self):
+        conn = sqlite3.connect('anime_bot.db')
         cursor = conn.cursor()
-        
-        # Create downloads table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS downloads (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                anime_title TEXT NOT NULL,
-                episodes TEXT NOT NULL,
-                download_path TEXT NOT NULL,
-                download_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                file_size TEXT,
-                status TEXT DEFAULT 'completed'
-            )
-        ''')
-        
-        # Create users table for statistics
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY,
-                username TEXT,
-                first_name TEXT,
-                last_name TEXT,
-                join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                total_downloads INTEGER DEFAULT 0
-            )
-        ''')
-        
-        # Create search_history table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS search_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                query TEXT NOT NULL,
-                search_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                results_count INTEGER DEFAULT 0
-            )
-        ''')
-        
-        conn.commit()
-        conn.close()
-    
-    def save_download(self, user_id: int, anime_title: str, episodes: str, download_path: str):
-        """Save download record to database."""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Insert download record
+            yield cursor
+            conn.commit()
+        finally:
+            cursor.close()
+            conn.close()
+    
+    def init_db(self):
+        """Initialize database tables"""
+        with self.get_cursor() as cursor:
+            # Users table
             cursor.execute('''
-                INSERT INTO downloads (user_id, anime_title, episodes, download_path)
-                VALUES (?, ?, ?, ?)
-            ''', (user_id, anime_title, episodes, download_path))
+                CREATE TABLE IF NOT EXISTS users (
+                    user_id INTEGER PRIMARY KEY,
+                    username TEXT,
+                    first_name TEXT,
+                    join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    total_downloads INTEGER DEFAULT 0
+                )
+            ''')
             
-            # Update user statistics
+            # Downloads table
             cursor.execute('''
-                INSERT OR IGNORE INTO users (user_id, total_downloads)
-                VALUES (?, 0)
+                CREATE TABLE IF NOT EXISTS downloads (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    anime_url TEXT,
+                    episode INTEGER,
+                    file_path TEXT,
+                    status TEXT DEFAULT 'pending',
+                    download_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (user_id)
+                )
+            ''')
+    
+    def add_user(self, user_id: int, first_name: str, username: str = None):
+        """Add or update user"""
+        with self.get_cursor() as cursor:
+            cursor.execute('''
+                INSERT OR REPLACE INTO users (user_id, username, first_name)
+                VALUES (?, ?, ?)
+            ''', (user_id, username, first_name))
+    
+    def add_download(self, user_id: int, anime_url: str, episode: int, file_path: str):
+        """Record a download"""
+        with self.get_cursor() as cursor:
+            cursor.execute('''
+                INSERT INTO downloads (user_id, anime_url, episode, file_path, status)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (user_id, anime_url, episode, file_path, 'completed'))
+            
+            # Update user's total downloads
+            cursor.execute('''
+                UPDATE users 
+                SET total_downloads = total_downloads + 1 
+                WHERE user_id = ?
             ''', (user_id,))
-            
+    
+    def get_user_stats(self, user_id: int) -> dict:
+        """Get user download statistics"""
+        with self.get_cursor() as cursor:
             cursor.execute('''
-                UPDATE users SET total_downloads = total_downloads + 1
+                SELECT 
+                    COUNT(*) as total_downloads,
+                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as successful,
+                    SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed,
+                    MAX(download_date) as last_download
+                FROM downloads 
                 WHERE user_id = ?
             ''', (user_id,))
             
-            conn.commit()
-            conn.close()
-            
-            return True
-            
-        except Exception as e:
-            print(f"Database error: {e}")
-            return False
+            row = cursor.fetchone()
+            return {
+                'total_downloads': row[0] or 0,
+                'successful_downloads': row[1] or 0,
+                'failed_downloads': row[2] or 0,
+                'last_download': row[3]
+            }
     
-    def get_user_downloads(self, user_id: int, limit: int = 10) -> List[Dict]:
-        """Get download history for a user."""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            
+    def get_user_active_downloads(self, user_id: int):
+        """Get user's active downloads"""
+        with self.get_cursor() as cursor:
             cursor.execute('''
                 SELECT * FROM downloads 
-                WHERE user_id = ? 
-                ORDER BY download_date DESC 
-                LIMIT ?
-            ''', (user_id, limit))
-            
-            rows = cursor.fetchall()
-            conn.close()
-            
-            # Convert rows to dictionaries
-            downloads = []
-            for row in rows:
-                downloads.append(dict(row))
-            
-            return downloads
-            
-        except Exception as e:
-            print(f"Database error: {e}")
-            return []
-    
-    def save_search(self, user_id: int, query: str, results_count: int = 0):
-        """Save search query to history."""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                INSERT INTO search_history (user_id, query, results_count)
-                VALUES (?, ?, ?)
-            ''', (user_id, query, results_count))
-            
-            conn.commit()
-            conn.close()
-            
-            return True
-            
-        except Exception as e:
-            print(f"Database error: {e}")
-            return False
-    
-    def get_user_stats(self, user_id: int) -> Dict:
-        """Get user statistics."""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            
-            # Get user info
-            cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
-            user_row = cursor.fetchone()
-            
-            # Get download count
-            cursor.execute('SELECT COUNT(*) as count FROM downloads WHERE user_id = ?', (user_id,))
-            download_count = cursor.fetchone()['count']
-            
-            # Get recent searches
-            cursor.execute('''
-                SELECT query, search_date FROM search_history 
-                WHERE user_id = ? 
-                ORDER BY search_date DESC 
-                LIMIT 5
+                WHERE user_id = ? AND status = 'pending'
             ''', (user_id,))
-            
-            recent_searches = []
-            for row in cursor.fetchall():
-                recent_searches.append({
-                    'query': row['query'],
-                    'date': row['search_date']
-                })
-            
-            conn.close()
-            
-            stats = {
-                'user_id': user_id,
-                'total_downloads': download_count,
-                'recent_searches': recent_searches,
-                'join_date': user_row['join_date'] if user_row else None
-            }
-            
-            return stats
-            
-        except Exception as e:
-            print(f"Database error: {e}")
-            return {}
-    
-    def cleanup_old_records(self, days: int = 30):
-        """Clean up records older than specified days."""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Clean old downloads
-            cursor.execute('''
-                DELETE FROM downloads 
-                WHERE julianday('now') - julianday(download_date) > ?
-            ''', (days,))
-            
-            # Clean old search history
-            cursor.execute('''
-                DELETE FROM search_history 
-                WHERE julianday('now') - julianday(search_date) > ?
-            ''', (days,))
-            
-            deleted_count = cursor.rowcount
-            conn.commit()
-            conn.close()
-            
-            return deleted_count
-            
-        except Exception as e:
-            print(f"Database cleanup error: {e}")
-            return 0
+            return cursor.fetchall()
