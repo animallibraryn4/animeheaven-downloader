@@ -5,7 +5,9 @@ from typing import Dict, List, Optional
 from urllib.parse import quote, urlparse
 
 from bs4 import BeautifulSoup
-from plugins.exceptions import SourceError, NoResultsFound
+
+# Change to (if using relative import within plugins directory):
+from .exceptions import SourceError, NoResultsFound
 
 
 class BaseScraper:
