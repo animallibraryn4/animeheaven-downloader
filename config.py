@@ -18,3 +18,26 @@ LOG_PATH = 'logs'
 
 # Time Configuration
 now = datetime.now().strftime('%d%m%y_%H%M')
+
+# Supported Anime Sources
+ANIME_SOURCES = {
+    'gogoanime': {
+        'base_url': 'https://gogoanime3.co',
+        'search_url': 'https://gogoanime3.co/search.html',
+        'episode_pattern': 'https://gogoanime3.co/{anime_id}-episode-{episode}'
+    },
+    'animepahe': {
+        'base_url': 'https://animepahe.com',
+        'api_url': 'https://animepahe.com/api'
+    },
+    'zoro': {
+        'base_url': 'https://zoro.to',
+        'search_url': 'https://zoro.to/search'
+    }
+}
+
+# Default source
+DEFAULT_SOURCE = 'gogoanime'
+
+# Time Configuration
+now = datetime.now().strftime('%d%m%y_%H%M')
