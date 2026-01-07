@@ -69,6 +69,43 @@ Hello {user.first_name}! I can help you download anime episodes from multiple so
         """
         await update.message.reply_text(welcome_msg, parse_mode='Markdown')
     
+    async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show help information"""
+        help_msg = """
+📚 *Anime Downloader Bot - Help Guide*
+
+*How to use:*
+1. Use `/search <anime_name>` to find anime
+2. Click on an anime from the results
+3. Enter episode range (e.g., `1-10` or `5` or `1,3,5`)
+4. Wait for downloads to complete
+
+*Commands:*
+• `/start` - Welcome message
+• `/help` - This help guide
+• `/search <query>` - Search for anime
+• `/download <id> <range>` - Direct download
+• `/sources` - Change anime source
+• `/status` - Check download progress
+• `/cancel` - Cancel current download
+
+*Episode Range Formats:*
+• `1-10` - Episodes 1 to 10
+• `5` - Single episode 5
+• `1,3,5` - Specific episodes 1, 3, and 5
+
+*Limitations:*
+• Max 10 episodes per download
+• File size limit: 50MB (Telegram restriction)
+• Supported sources: GogoAnime, AnimePahe
+
+*Tips:*
+• Use specific anime names for better results
+• If download fails, try changing source with `/sources`
+• Be patient, some downloads may take time
+        """
+        await update.message.reply_text(help_msg, parse_mode='Markdown')
+    
     async def search_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Search for anime"""
         if not context.args:
