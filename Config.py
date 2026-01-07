@@ -1,52 +1,28 @@
 import os
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Bot Configuration
-BOT_CONFIG = {
-    'MAX_FILE_SIZE': 50 * 1024 * 1024,  # 50MB (Telegram limit)
-    'MAX_EPISODES_PER_REQUEST': 5,
-    'DOWNLOAD_TIMEOUT': 300,  # 5 minutes
-    'REQUEST_DELAY': 2,  # seconds between requests
-}
+BOT_TOKEN = os.getenv('BOT_TOKEN', '')
+ADMIN_IDS = list(map(int, os.getenv('ADMIN_IDS', '').split(','))) if os.getenv('ADMIN_IDS') else []
+MAX_DOWNLOADS_PER_USER = int(os.getenv('MAX_DOWNLOADS_PER_USER', '3'))
+MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', '524288000'))  # 500MB in bytes
 
-# Anime Sources Configuration
-ANIME_SOURCES = {
-    'gogoanime': {
-        'base_url': 'https://gogoanime3.co',
-        'search_url': '/search.html',
-        'ajax_url': '/load-list-episode',
-    },
-    '9anime': {
-        'base_url': 'https://9anime.pl',
-        'search_url': '/filter',
-        'ajax_url': '/ajax/episode/list/',
-    }
-}
+# Anime Downloader Configuration
+ANIMEHEAVEN_ABUSE_MSG = 'You have triggered abuse protection'
+BLOCKED_TIMEOUT = int(os.getenv('BLOCKED_TIMEOUT', '120'))
+DEFAULT_DOWNLOAD_PATH = 'downloads'
+LOG_PATH = 'logs'
 
-# Download Settings
-DOWNLOAD_SETTINGS = {
-    'DEFAULT_FORMAT': 'mp4',
-    'QUALITY_PREFERENCE': ['1080p', '720p', '480p', '360p'],
-    'DEFAULT_DOWNLOAD_PATH': 'downloads',
-    'TEMP_PATH': 'temp',
-}
+# Server Configuration
+PORT = int(os.getenv('PORT', '8080'))
+HOST = os.getenv('HOST', '0.0.0.0')
 
-# Create necessary directories
-def init_directories():
-    """Create necessary directories for the bot."""
-    directories = [
-        DOWNLOAD_SETTINGS['DEFAULT_DOWNLOAD_PATH'],
-        DOWNLOAD_SETTINGS['TEMP_PATH'],
-        'logs',
-        'database'
-    ]
-    
-    for directory in directories:
-        os.makedirs(directory, exist_ok=True)
+# Database Configuration (Optional)
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///anime_bot.db')
 
-# Initialize directories on import
-init_directories()
-
-# Get current timestamp for downloads
-def get_timestamp():
-    return datetime.now().strftime('%Y%m%d_%H%M%S')
+# Time Configuration
+now = datetime.now().strftime('%d%m%y_%H%M')
