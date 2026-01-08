@@ -23,8 +23,8 @@ now = datetime.now().strftime('%d%m%y_%H%M')
 ANIME_SOURCES = {
     'animeheaven': {
         'base_url': 'https://animeheaven.me',
-        'search_url': 'https://animeheaven.me/search',
-        'episode_pattern': 'https://animeheaven.me/{anime_id}-episode-{episode}'
+        'search_url': 'https://animeheaven.me/search.php',
+        'episode_pattern': 'https://animeheaven.me/watch/{anime_id}-episode-{episode}'
     },
     'animepahe': {
         'base_url': 'https://animepahe.com',
@@ -34,6 +34,3 @@ ANIME_SOURCES = {
 
 # Default source
 DEFAULT_SOURCE = 'animeheaven'
-
-# Time Configuration
-now = datetime.now().strftime('%d%m%y_%H%M')
