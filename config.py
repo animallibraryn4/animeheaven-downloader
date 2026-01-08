@@ -21,23 +21,19 @@ now = datetime.now().strftime('%d%m%y_%H%M')
 
 # Supported Anime Sources
 ANIME_SOURCES = {
-    'gogoanime': {
+    'animeheaven': {
         'base_url': 'https://animeheaven.me',
-        'search_url': 'https://animeheaven.me/search.html',
+        'search_url': 'https://animeheaven.me/search',
         'episode_pattern': 'https://animeheaven.me/{anime_id}-episode-{episode}'
     },
     'animepahe': {
         'base_url': 'https://animepahe.com',
         'api_url': 'https://animepahe.com/api'
-    },
-    'zoro': {
-        'base_url': 'https://zoro.to',
-        'search_url': 'https://zoro.to/search'
     }
 }
 
 # Default source
-DEFAULT_SOURCE = 'gogoanime'
+DEFAULT_SOURCE = 'animeheaven'
 
 # Time Configuration
 now = datetime.now().strftime('%d%m%y_%H%M')
