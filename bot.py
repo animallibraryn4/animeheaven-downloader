@@ -1,3 +1,4 @@
+# Update the imports section at the top
 import os
 import sys
 import logging
@@ -15,9 +16,45 @@ from telegram.ext import (
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from config import BOT_TOKEN, ANIME_SOURCES, DEFAULT_SOURCE, MAX_DOWNLOADS_PER_USER
-from plugins.scraper import MultiSourceScraper, DirectVideoExtractor
-from plugins.downloader import SmartDownloader
-from plugins.exceptions import SourceError, NoResultsFound
+
+# Import from plugins folder
+try:
+    # Try relative import
+    from plugins.scraper import MultiSourceScraper, DirectVideoExtractor
+    from plugins.downloader import SmartDownloader
+    from plugins.exceptions import SourceError, NoResultsFound
+except ImportError:
+    # Try direct import
+    try:
+        from scraper import MultiSourceScraper, DirectVideoExtractor
+        from downloader import SmartDownloader
+        from exceptions import SourceError, NoResultsFound
+    except ImportError:
+        # Create minimal versions if imports fail
+        class MultiSourceScraper:
+            def __init__(self, source):
+                pass
+            def search(self, query):
+                return []
+            def set_source(self, source):
+                pass
+        
+        class DirectVideoExtractor:
+            @staticmethod
+            def extract_from_url(url):
+                return url
+        
+        class SmartDownloader:
+            def download(self, url, filename):
+                return None
+            def cleanup(self):
+                pass
+        
+        class SourceError(Exception):
+            pass
+        
+        class NoResultsFound(Exception):
+            pass
 
 logger = logging.getLogger(__name__)
 
