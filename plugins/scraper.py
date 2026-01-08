@@ -1,3 +1,4 @@
+
 import requests
 import re
 import json
@@ -6,8 +7,16 @@ from urllib.parse import quote, urlparse, urljoin, parse_qs
 
 from bs4 import BeautifulSoup
 
-from .exceptions import SourceError, NoResultsFound
-
+# Import from same directory
+try:
+    from .exceptions import SourceError, NoResultsFound
+except ImportError:
+    # Define locally if import fails
+    class SourceError(Exception):
+        pass
+    
+    class NoResultsFound(Exception):
+        pass
 
 class BaseScraper:
     """Base class for all anime scrapers"""
