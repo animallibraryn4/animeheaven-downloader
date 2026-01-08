@@ -22,9 +22,9 @@ now = datetime.now().strftime('%d%m%y_%H%M')
 # Supported Anime Sources
 ANIME_SOURCES = {
     'gogoanime': {
-        'base_url': 'https://gogoanime3.co',
-        'search_url': 'https://gogoanime3.co/search.html',
-        'episode_pattern': 'https://gogoanime3.co/{anime_id}-episode-{episode}'
+        'base_url': 'https://animeheaven.me',
+        'search_url': 'https://animeheaven.me/search.html',
+        'episode_pattern': 'https://animeheaven.me/{anime_id}-episode-{episode}'
     },
     'animepahe': {
         'base_url': 'https://animepahe.com',
